@@ -1,38 +1,69 @@
 import requests
 class PythonApi:
 
-    def __init__(self, user, password, base_url, site, version):
-        self._user = user
-        self._password = password
-        self._base_url = base_url
-        self._site = site
-        self._version = version
-        self._is_logged_in = False
+    def __init__(self, user=None, password=None, base_url=None, site=None, version=None):
+        self.user = ''
+        self.password = ''
+        self.site = 'default'
+        self.base_url = 'https://127.0.0.1:8443'
+        self.version = '4.8.20'
+        self.is_logged_in = False
+        self.debug = False
 
-        self._cookies = '';
+        if user:
+            self.user = user
+        if password:
+            self.password = password
+        if base_url:
+            self.base_url = base_url
+        if site:
+            self.site = site
+        if version:
+            self.version = version
+
+        self.session = None
 
     def __del__(self):
-        if self._is_logged_in:
-            self._log_out()
+        if self.is_logged_in:
+            self.logout()
 
-    def _log_in(self):
-        self._cookies = ''
+    def login(self):
+        if self.session:
+            self.session.close()
+            self.session = None
 
-        headers = { 'referer': self._base_url + '/login' }
-        url = self._base_url + '/api/login'
+        self.session = requests.session()
+        headers = {'referer': self.base_url + '/login'}
+        url = self.base_url + '/api/login'
 
-        response = requests.post(url, headers=headers)
-        self._cookies = response.cookies[0]
-        self._is_logged_in = True
+        login_info = {'username': self.user, 'password': self.password}
+
+        response = self.session.post(url, headers=headers, json=login_info)
+
+        if self.debug:
+            print(response.text)
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            return False
+
+        self.is_logged_in = True
         return True
 
-
-    def _log_out(self):
+    def logout(self):
         if self._is_logged_in:
             return False
-        response = requests.get(self._base_url + '/logout')
-        self._is_logged_in = False
-        self._cookies = ''
+        response = self.session.get(self._base_url + '/logout')
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            return False
+
+        self.is_logged_in = False
+        self.session.close()
+
         return True
 
     def authorize_guest(self, mac, minutes, up=None, down=None, m_bytes=None, ap_mac=None):
