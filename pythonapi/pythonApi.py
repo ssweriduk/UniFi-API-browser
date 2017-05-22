@@ -1,6 +1,8 @@
 import requests
-class PythonApi:
+import time
 
+
+class PythonApi:
     def __init__(self, user=None, password=None, base_url=None, site=None, version=None):
         self.user = ''
         self.password = ''
@@ -100,7 +102,26 @@ class PythonApi:
         raise NotImplementedError
 
     def stat_sessions(self, start=None, end=None, mac=None):
-        raise NotImplementedError
+        if not self.is_logged_in:
+            return False
+        if not end:
+            end = time.time()
+        if not start:
+            start = end - (7*24*3600)
+
+        data = {'type': 'all', 'start': start, 'end': end}
+
+        if mac:
+            data['mac'] = mac
+
+        response = self.session(self.base_url + '/api/s/' + self.site + '/stat/session', params=data)
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            return False
+
+        return response.json()
 
     def stat_sta_sessions_latest(self, mac, limit=None):
         raise NotImplementedError
@@ -142,7 +163,17 @@ class PythonApi:
         raise NotImplementedError
 
     def list_sites(self):
-        raise NotImplementedError
+        if not self.is_logged_in:
+            return False
+
+        response = self.session.get(self.base_url + '/api/self/sites')
+
+        try:
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            return False
+
+        return response.json()
 
     def stat_sites(self):
         raise NotImplementedError
