@@ -11,6 +11,7 @@ class PythonApi:
         self.version = '4.8.20'
         self.is_logged_in = False
         self.debug = False
+        self.verify_ssl = True
 
         if user:
             self.user = user
@@ -40,7 +41,7 @@ class PythonApi:
 
         login_info = {'username': self.user, 'password': self.password}
 
-        response = self.session.post(url, headers=headers, json=login_info)
+        response = self.session.post(url, headers=headers, json=login_info, verify=self.verify_ssl)
 
         if self.debug:
             print(response.text)
@@ -54,9 +55,9 @@ class PythonApi:
         return True
 
     def logout(self):
-        if self._is_logged_in:
+        if self.is_logged_in:
             return False
-        response = self.session.get(self._base_url + '/logout')
+        response = self.session.get(self.base_url + '/logout', verify=self.verify_ssl)
 
         try:
             response.raise_for_status()
@@ -114,7 +115,7 @@ class PythonApi:
         if mac:
             data['mac'] = mac
 
-        response = self.session(self.base_url + '/api/s/' + self.site + '/stat/session', params=data)
+        response = self.session.get(self.base_url + '/api/s/' + self.site + '/stat/session', params=data, verify=self.verify_ssl)
 
         try:
             response.raise_for_status()
@@ -166,7 +167,7 @@ class PythonApi:
         if not self.is_logged_in:
             return False
 
-        response = self.session.get(self.base_url + '/api/self/sites')
+        response = self.session.get(self.base_url + '/api/self/sites', verify=self.verify_ssl)
 
         try:
             response.raise_for_status()
